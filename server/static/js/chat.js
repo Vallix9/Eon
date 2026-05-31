@@ -950,6 +950,30 @@ function setupEventListeners() {
     document.getElementById("chat-title").addEventListener("click", () => {
         if (currentChat && currentChat.type !== "private") openRoomProfile();
     });
+
+    // Phone verification
+    document.getElementById("phone-send-code-btn").addEventListener("click", async () => {
+        try {
+            const resp = await apiFetch("/api/auth/phone/send-code", { method: "POST" });
+            const data = await resp.json();
+            if (!resp.ok) { alert(data.error); return; }
+            alert("Код отправлен на ваш телефон");
+        } catch (e) { alert("Ошибка отправки кода"); }
+    });
+    document.getElementById("phone-verify-btn").addEventListener("click", async () => {
+        const code = document.getElementById("phone-verify-code").value.trim();
+        if (!code) { alert("Введите код из SMS"); return; }
+        try {
+            const resp = await apiFetch("/api/auth/phone/verify", {
+                method: "POST",
+                body: JSON.stringify({ code }),
+            });
+            const data = await resp.json();
+            if (!resp.ok) { alert(data.error); return; }
+            alert("Телефон подтверждён");
+            loadSettings();
+        } catch (e) { alert("Ошибка подтверждения"); }
+    });
 }
 
 // --- Photo viewer ---
@@ -1107,17 +1131,47 @@ async function loadSettings() {
             qrSection.classList.add("hidden");
             setupBtn.classList.remove("hidden");
         }
+
+        // Phone
+        document.getElementById("settings-phone").value = user.phone || "";
+        const phoneStatusEl = document.getElementById("phone-status-text");
+        const phoneSendArea = document.getElementById("phone-send-code-area");
+        const phoneVerifyArea = document.getElementById("phone-verify-area");
+        if (user.phone_verified) {
+            phoneStatusEl.textContent = "✓ Телефон подтверждён";
+            phoneStatusEl.style.color = "var(--success)";
+            phoneSendArea.classList.add("hidden");
+            phoneVerifyArea.classList.add("hidden");
+        } else if (user.phone) {
+            phoneStatusEl.textContent = "✗ Телефон не подтверждён";
+            phoneStatusEl.style.color = "var(--warning)";
+            phoneSendArea.classList.remove("hidden");
+            phoneVerifyArea.classList.remove("hidden");
+        } else {
+            phoneStatusEl.textContent = "Телефон не указан";
+            phoneStatusEl.style.color = "var(--text-muted)";
+            phoneSendArea.classList.add("hidden");
+            phoneVerifyArea.classList.add("hidden");
+        }
     } catch (e) { console.error(e); }
 }
 
 async function saveProfile() {
     const nickname = document.getElementById("settings-nickname").value.trim();
     const bio = document.getElementById("settings-bio").value.trim();
+    const phone = document.getElementById("settings-phone").value.trim();
     try {
         const resp = await apiFetch("/api/profile", {
             method: "PUT",
             body: JSON.stringify({ nickname: nickname || null, bio: bio || null }),
         });
+        // Save phone separately if changed
+        if (phone) {
+            await apiFetch("/api/auth/phone/update", {
+                method: "POST",
+                body: JSON.stringify({ phone }),
+            });
+        }
         const data = await resp.json();
         if (!resp.ok) {
             alert(data.error);

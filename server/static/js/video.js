@@ -108,11 +108,21 @@ class VideoRecorder {
     }
 
     send() {
-        if (!this.recordedBlob) return;
-        const blob = this.recordedBlob;
-        const callback = this.onComplete;
-        this.cleanup();
-        if (callback) callback(blob);
+        if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+            this.mediaRecorder.onstop = () => {
+                const blob = new Blob(this.videoChunks, { type: "video/webm" });
+                const callback = this.onComplete;
+                this.videoChunks = [];
+                this.cleanup();
+                if (callback) callback(blob);
+            };
+            this.mediaRecorder.stop();
+        } else if (this.recordedBlob) {
+            const blob = this.recordedBlob;
+            const callback = this.onComplete;
+            this.cleanup();
+            if (callback) callback(blob);
+        }
     }
 
     startTimer() {

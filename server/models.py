@@ -28,6 +28,12 @@ class User(db.Model):
     # Bio
     bio = db.Column(db.String(500), nullable=True)
 
+    # Phone verification
+    phone = db.Column(db.String(20), nullable=True)
+    phone_verified = db.Column(db.Boolean, default=False)
+    phone_code = db.Column(db.String(6), nullable=True)
+    phone_code_expires = db.Column(db.DateTime, nullable=True)
+
     sent_messages = db.relationship("Message", foreign_keys="Message.sender_id", backref="sender", lazy="dynamic")
     room_memberships = db.relationship("RoomMember", backref="user", lazy="dynamic")
 
@@ -44,6 +50,8 @@ class User(db.Model):
             "last_seen": self.last_seen.isoformat() if self.last_seen else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "bio": self.bio,
+            "phone": self.phone,
+            "phone_verified": self.phone_verified,
         }
         if full:
             data.update({

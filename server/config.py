@@ -27,6 +27,11 @@ SMTP_USER = "your-email@gmail.com"
 SMTP_PASSWORD = "your-app-password"
 SMTP_FROM = "noreply@eon.chat"
 
+# Twilio (SMS)
+TWILIO_ACCOUNT_SID = ""
+TWILIO_AUTH_TOKEN = ""
+TWILIO_PHONE_NUMBER = ""
+
 # Rate limits (requests per window)
 RATE_LIMIT_LOGIN = (5, 60)       # 5 попыток в минуту
 RATE_LIMIT_REGISTER = (3, 300)   # 3 регистрации в 5 минут

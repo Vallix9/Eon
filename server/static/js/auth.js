@@ -115,6 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const username = document.getElementById("username").value.trim();
             const nickname = document.getElementById("nickname")?.value.trim() || "";
             const email = document.getElementById("email").value.trim();
+            const phone = document.getElementById("phone")?.value.trim() || "";
             const password = document.getElementById("password").value;
             const confirm = document.getElementById("password-confirm").value;
             const errorEl = document.getElementById("error-message");
@@ -129,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 const resp = await apiFetch("/api/auth/register", {
                     method: "POST",
-                    body: JSON.stringify({ username, nickname, email, password }),
+                    body: JSON.stringify({ username, nickname, email, phone, password }),
                 });
                 const data = await resp.json();
                 if (!resp.ok) {
