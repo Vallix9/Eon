@@ -4,19 +4,32 @@ Real-time messenger with Flask backend and desktop/mobile clients.
 
 ## Architecture
 
-- **Server** — Flask + Socket.IO (Python), SQLite database
-- **Desktop** — pywebview wrapper (Windows .exe)
-- **Mobile** — Capacitor (Android), Flutter (planned)
+- **`server/`** — Flask + Socket.IO (Python), SQLite database
+- **`desktop/`** — pywebview wrapper (Windows .exe)
+- **`mobile/`** — Capacitor (Android), Flutter (planned)
+- **`flutter_app/`** — Future Flutter project (placeholder)
 
 ## Quick Start
+
+### Start the server
 
 ```bash
 cd server
 pip install -r requirements.txt
-python app.py
+python run_server.py
 ```
 
 Open http://localhost:8000 in a browser.
+
+### Run the desktop client (separate terminal)
+
+```bash
+cd desktop
+pip install pywebview
+python main.py
+```
+
+Override the server URL: `python main.py http://localhost:8000`
 
 ## Build Desktop .exe
 
