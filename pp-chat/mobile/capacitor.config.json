@@ -1,0 +1,18 @@
+{
+  "appId": "com.eon.messenger",
+  "appName": "Eon",
+  "webDir": "www",
+  "server": {
+    "url": "http://192.168.1.100:8000",
+    "cleartext": true,
+    "allowNavigation": ["*"]
+  },
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "Preferences": {
+      "enabled": true
+    }
+  }
+}

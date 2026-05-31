@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Eon</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        h1 { color: #2a8bf2; margin-bottom: 8px; font-size: 28px; }
+        p { color: #888; margin-bottom: 24px; font-size: 14px; text-align: center; }
+        input, button {
+            width: 100%;
+            max-width: 320px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            margin-bottom: 12px;
+        }
+        input {
+            background: #16213e;
+            border: 1px solid #2a4a7f;
+            color: #e0e0e0;
+        }
+        input::placeholder { color: #555; }
+        button {
+            background: #2a8bf2;
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:active { background: #1a6bc2; }
+        .error { color: #ff4444; font-size: 13px; margin-bottom: 12px; display: none; }
+        .status { color: #888; font-size: 12px; margin-top: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Eon</h1>
+    <p>Введите IP-адрес компьютера с сервером</p>
+    <input type="text" id="server-ip" placeholder="192.168.1.100:8000" inputmode="url">
+    <button id="connect-btn">Подключиться</button>
+    <div class="error" id="error-msg">Неверный адрес</div>
+    <div class="status" id="status">Сохранённый адрес: --</div>
+
+    <script>
+        const STORAGE_KEY = 'eon_server_url';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                document.getElementById('server-ip').value = saved;
+                document.getElementById('status').textContent = 'Сохранённый адрес: ' + saved;
+                connectTo(saved);
+            }
+        });
+
+        document.getElementById('connect-btn').addEventListener('click', () => {
+            const ip = document.getElementById('server-ip').value.trim();
+            if (!ip) {
+                document.getElementById('error-msg').style.display = 'block';
+                return;
+            }
+            document.getElementById('error-msg').style.display = 'none';
+            let url = ip;
+            if (!url.startsWith('http')) url = 'http://' + url;
+            localStorage.setItem(STORAGE_KEY, url);
+            connectTo(url);
+        });
+
+        function connectTo(url) {
+            window.location.href = url + '/chat';
+        }
+    </script>
+</body>
+</html>

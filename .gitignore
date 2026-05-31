@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Build outputs
+dist/
+dist_onefile/
+dist_windowed/
+build/
+*.spec
+
+# Virtual environment
+venv/
+.venv/
+
+# Database (user data)
+*.db
+
+# Logs
+*.log
+stdout.txt
+stderr.txt
+
+# Uploads (user data)
+uploads/
+
+# Node
+node_modules/
+
+# Android (gradle caches, build)
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Embedded git repos
+**/.git
