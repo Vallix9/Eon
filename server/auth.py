@@ -5,13 +5,12 @@ from flask_jwt_extended import (
 )
 from models import db, User
 from email_service import send_verification_email
-from phone_service import send_sms_code, generate_sms_code
 from rate_limiter import rate_limit
 import bcrypt
 import pyotp
 import io
 import base64
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import config
 
 auth_bp = Blueprint("auth", __name__)
@@ -28,7 +27,6 @@ def register():
     nickname = data.get("nickname", "").strip() or username
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
-    phone = data.get("phone", "").strip()
 
     if not all([username, email, password]):
         return jsonify({"error": "Все поля обязательны"}), 400
@@ -43,12 +41,6 @@ def register():
         return jsonify({"error": "Логин уже занят"}), 409
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email уже зарегистрирован"}), 409
-    if phone:
-        phone = phone.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
-        if not phone.startswith("+") or len(phone) < 10:
-            return jsonify({"error": "Телефон должен быть в формате +71234567890"}), 400
-        if User.query.filter_by(phone=phone).first():
-            return jsonify({"error": "Телефон уже используется"}), 409
 
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     verification_token = User.generate_verification_token()
@@ -56,21 +48,12 @@ def register():
         username=username,
         nickname=nickname,
         email=email,
-        phone=phone if phone else None,
         password_hash=pw_hash,
         verification_token=verification_token,
         is_verified=False,
     )
     db.session.add(user)
     db.session.commit()
-
-    # Auto-send SMS code if phone provided
-    if phone:
-        code = send_sms_code(phone)
-        if code:
-            user.phone_code = code
-            user.phone_code_expires = datetime.now(timezone.utc) + timedelta(minutes=5)
-            db.session.commit()
 
     # Send verification email (async-friendly, non-blocking)
     send_verification_email(email, verification_token)
@@ -214,92 +197,3 @@ def me():
     if not user:
         return jsonify({"error": "Пользователь не найден"}), 404
     return jsonify({"user": user.to_dict(full=True)}), 200
-
-
-# --- Phone verification ---
-@auth_bp.route("/api/auth/phone/send-code", methods=["POST"])
-@jwt_required()
-@rate_limit(*config.RATE_LIMIT_EMAIL)
-def send_phone_code():
-    user_id = int(get_jwt_identity())
-    user = db.session.get(User, user_id)
-    if not user:
-        return jsonify({"error": "Пользователь не найден"}), 404
-    if user.phone_verified:
-        return jsonify({"error": "Телефон уже подтверждён"}), 400
-    if not user.phone:
-        return jsonify({"error": "Телефон не указан. Укажите его в настройках."}), 400
-
-    code = send_sms_code(user.phone)
-    if not code:
-        code = generate_sms_code()
-        print(f"[DEV] SMS code for {user.phone}: {code}")
-
-    user.phone_code = code
-    user.phone_code_expires = datetime.now(timezone.utc) + timedelta(minutes=5)
-    db.session.commit()
-    return jsonify({"message": "Код отправлен на ваш телефон"}), 200
-
-
-@auth_bp.route("/api/auth/phone/verify", methods=["POST"])
-@jwt_required()
-def verify_phone():
-    user_id = int(get_jwt_identity())
-    user = db.session.get(User, user_id)
-    if not user:
-        return jsonify({"error": "Пользователь не найден"}), 404
-    if user.phone_verified:
-        return jsonify({"error": "Телефон уже подтверждён"}), 400
-
-    data = request.get_json() or {}
-    code = data.get("code", "").strip()
-    if not code or not user.phone_code:
-        return jsonify({"error": "Сначала запросите код"}), 400
-
-    if datetime.now(timezone.utc) > user.phone_code_expires:
-        user.phone_code = None
-        user.phone_code_expires = None
-        db.session.commit()
-        return jsonify({"error": "Код истёк. Запросите новый."}), 400
-
-    if code != user.phone_code:
-        return jsonify({"error": "Неверный код"}), 401
-
-    user.phone_verified = True
-    user.phone_code = None
-    user.phone_code_expires = None
-    db.session.commit()
-    return jsonify({"message": "Телефон подтверждён"}), 200
-
-
-@auth_bp.route("/api/auth/phone/update", methods=["POST"])
-@jwt_required()
-def update_phone():
-    user_id = int(get_jwt_identity())
-    user = db.session.get(User, user_id)
-    if not user:
-        return jsonify({"error": "Пользователь не найден"}), 404
-
-    data = request.get_json() or {}
-    phone = data.get("phone", "").strip().replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
-    if not phone.startswith("+") or len(phone) < 10:
-        return jsonify({"error": "Телефон должен быть в формате +71234567890"}), 400
-    if User.query.filter(User.phone == phone, User.id != user_id).first():
-        return jsonify({"error": "Телефон уже используется"}), 409
-
-    user.phone = phone
-    user.phone_verified = False
-    user.phone_code = None
-    user.phone_code_expires = None
-    db.session.commit()
-
-    # Auto-send code
-    code = send_sms_code(phone)
-    if not code:
-        code = generate_sms_code()
-        print(f"[DEV] SMS code for {phone}: {code}")
-    user.phone_code = code
-    user.phone_code_expires = datetime.now(timezone.utc) + timedelta(minutes=5)
-    db.session.commit()
-
-    return jsonify({"message": "Телефон обновлён. Код отправлен."}), 200
