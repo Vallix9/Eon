@@ -9,12 +9,13 @@ import webview
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import config
 from app import socketio, app
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    filename=os.path.join(os.path.dirname(os.path.abspath(__file__)), "eon.log"),
+    filename=os.path.join(config.BASE_DIR, "eon.log"),
     filemode="a",
 )
 log = logging.getLogger("eon")

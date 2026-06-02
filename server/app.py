@@ -16,7 +16,10 @@ from datetime import datetime, timezone
 from werkzeug.utils import secure_filename
 import bcrypt
 
-app = Flask(__name__)
+app = Flask(__name__,
+    template_folder=os.path.join(config.RESOURCE_DIR, "templates"),
+    static_folder=os.path.join(config.RESOURCE_DIR, "static"),
+    static_url_path="/static")
 app.config.from_object(config)
 app.config["SECRET_KEY"] = config.SECRET_KEY
 
