@@ -43,3 +43,9 @@ Thumbs.db
 
 # Embedded git repos
 **/.git
+
+# Build outputs
+dist/
+build/
+*.spec
+*.log
