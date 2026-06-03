@@ -1,6 +1,5 @@
 class ChatNotifications {
     constructor() {
-        this.enabled = false;
         this.requestPermission();
     }
 
@@ -17,9 +16,9 @@ class ChatNotifications {
     notify(title, body, options = {}) {
         if (!this.enabled) return;
         try {
-            new Notification(title, { body, icon: "/static/favicon.ico", ...options });
+            new Notification(title, { body, icon: "/static/img/icon-192.png", ...options });
         } catch (e) {
-            // fallback — ignore
+            // ignore
         }
     }
 

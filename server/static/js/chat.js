@@ -43,9 +43,36 @@ function applyTheme(theme) {
 
 // --- Socket ---
 function connectSocket() {
-    socket = io(API_BASE, { query: { token: getToken() } });
+    socket = io(API_BASE, {
+        query: { token: getToken() },
+        transports: ["polling"],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: Infinity,
+    });
 
-    socket.on("connect_error", () => console.error("Socket error"));
+    socket.on("connect", () => {
+        console.log("Socket connected:", socket.id);
+        document.getElementById("connection-status").classList.add("hidden");
+    });
+
+    socket.on("disconnect", (reason) => {
+        console.warn("Socket disconnected:", reason);
+        if (reason !== "io client disconnect") {
+            document.getElementById("connection-status").classList.remove("hidden");
+        }
+    });
+
+    socket.on("connect_error", (err) => {
+        console.error("Socket error:", err.message);
+        document.getElementById("connection-status").classList.remove("hidden");
+    });
+
+    socket.on("error", (data) => {
+        if (data && data.message) {
+            alert(data.message);
+        }
+    });
 
     socket.on("user_status", (data) => {
         activeUsers[data.user_id] = data.is_online;
@@ -73,15 +100,15 @@ function connectSocket() {
     });
 
     socket.on("new_private_message", (msg) => {
-        const rel = currentChat && currentChat.type === "private" &&
+        const viewing = currentChat && currentChat.type === "private" &&
             (msg.sender_id === currentChat.id || msg.recipient_id === currentChat.id);
-        if (rel) {
+        if (viewing) {
             renderMessage(msg);
             if (isNearBottom()) scrollToBottom();
         } else if (msg.sender_id !== currentUser.id) {
             incrementUnread(null, msg.sender_id);
         }
-        if (msg.sender_id !== currentUser.id) {
+        if (msg.sender_id !== currentUser.id && !viewing) {
             chatNotifications.notify(msg.sender_username, msg.content || "Медиа");
             chatNotifications.playSound("message");
         }
@@ -91,8 +118,13 @@ function connectSocket() {
     socket.on("typing_indicator", (data) => {
         if (data.user_id === currentUser.id) return;
         const el = document.getElementById("typing-indicator");
-        el.textContent = data.is_typing ? `${data.username} печатает...` : "";
-        el.classList.toggle("hidden", !data.is_typing);
+        if (data.is_typing) {
+            el.innerHTML = `${data.username} печатает<span class="typing-dot">.</span><span class="typing-dot" style="animation-delay:.2s">.</span><span class="typing-dot" style="animation-delay:.4s">.</span>`;
+            el.classList.remove("hidden");
+        } else {
+            el.innerHTML = "";
+            el.classList.add("hidden");
+        }
     });
 
     socket.on("message_deleted", (data) => {
@@ -104,7 +136,11 @@ function connectSocket() {
 
 // --- Conversations ---
 async function loadConversations() {
+    const list = document.getElementById("chat-list");
     try {
+        if (!conversations.length) {
+            list.innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>Загрузка...</span></div>';
+        }
         const [convResp, contactsResp] = await Promise.all([
             apiFetch("/api/conversations"),
             apiFetch("/api/contacts"),
@@ -112,7 +148,6 @@ async function loadConversations() {
         const convData = await convResp.json();
         const contactsData = await contactsResp.json();
         conversations = convData.conversations;
-        // Populate contact labels cache from contacts API (one call)
         if (contactsData.contacts) {
             contactsData.contacts.forEach((ct) => {
                 if (ct.label) {
@@ -121,7 +156,10 @@ async function loadConversations() {
             });
         }
         renderConversations();
-    } catch (e) { console.error("Failed to load conversations", e); }
+    } catch (e) {
+        list.innerHTML = '<div class="loading-overlay" style="color:var(--danger)">Ошибка загрузки. <a href="#" onclick="location.reload()">Обновить</a></div>';
+        console.error("Failed to load conversations", e);
+    }
 }
 
 function refreshConversations() {
@@ -444,6 +482,10 @@ async function sendMessage() {
     const input = document.getElementById("message-input");
     const content = input.value.trim();
     if (!content || !currentChat) return;
+    if (!socket || !socket.connected) {
+        alert("Нет соединения с сервером. Сообщение не отправлено.");
+        return;
+    }
     input.value = "";
     input.style.height = "auto";
 
@@ -452,13 +494,16 @@ async function sendMessage() {
     } else {
         socket.emit("send_message", { room_id: currentChat.id, content });
     }
-    // Refresh convos after short delay to get the new message
     setTimeout(refreshConversations, 500);
 }
 
 // --- Voice send ---
 voiceRecorder.onComplete = async (blob) => {
     if (!currentChat) return;
+    if (!socket || !socket.connected) {
+        alert("Нет соединения с сервером");
+        return;
+    }
     try {
         const fd = new FormData();
         fd.append("file", blob, `v_${Date.now()}.webm`);
@@ -478,6 +523,10 @@ voiceRecorder.onComplete = async (blob) => {
 // --- Video send ---
 videoRecorder.onComplete = async (blob) => {
     if (!currentChat) return;
+    if (!socket || !socket.connected) {
+        alert("Нет соединения с сервером");
+        return;
+    }
     try {
         const fd = new FormData();
         fd.append("file", blob, `v_${Date.now()}.webm`);
@@ -1017,6 +1066,10 @@ function setupDragDrop() {
 }
 
 async function uploadMediaFile(file, msgType) {
+    if (!socket || !socket.connected) {
+        alert("Нет соединения с сервером");
+        return;
+    }
     const fileType = msgType === "video" ? "video" : "photo";
     try {
         const fd = new FormData();

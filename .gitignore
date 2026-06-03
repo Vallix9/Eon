@@ -5,8 +5,6 @@ __pycache__/
 
 # Build outputs
 dist/
-dist_onefile/
-dist_windowed/
 build/
 *.spec
 
@@ -19,8 +17,6 @@ venv/
 
 # Logs
 *.log
-stdout.txt
-stderr.txt
 
 # Uploads (user data)
 uploads/
@@ -28,7 +24,7 @@ uploads/
 # Node
 node_modules/
 
-# Android (gradle caches, build)
+# Android
 mobile/android/.gradle/
 mobile/android/app/build/
 mobile/android/build/
@@ -43,9 +39,3 @@ Thumbs.db
 
 # Embedded git repos
 **/.git
-
-# Build outputs
-dist/
-build/
-*.spec
-*.log

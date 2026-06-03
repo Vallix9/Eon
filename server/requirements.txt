@@ -6,6 +6,6 @@ Flask-CORS==4.0.0
 python-socketio==5.11.2
 bcrypt==4.1.2
 python-multipart==0.0.6
-eventlet==0.33.3
 pyotp==2.9.0
 qrcode[pil]==7.4.2
+
