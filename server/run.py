@@ -45,7 +45,7 @@ def wait_for_server(url, timeout=15):
 def start_server():
     log.info("Starting Flask/SocketIO server...")
     try:
-        socketio.run(app, host="127.0.0.1", port=8000, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host="0.0.0.0", port=8000, debug=False, allow_unsafe_werkzeug=True)
     except Exception as e:
         log.error(f"Server failed: {e}")
 
