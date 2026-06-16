@@ -37,18 +37,14 @@ class VideoRecorder {
                 alert("Запись видео не поддерживается в вашем браузере. Пожалуйста, используйте Chrome или Firefox на ПК.");
                 return;
             }
-            // Запрашиваем разрешения (на Android Capacitor сам запросит)
+            // Запрашиваем разрешения на камеру и микрофон (Android)
             try {
-                const Permissions = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Permissions;
-                if (Permissions) {
-                    const camPerm = { name: 'camera' };
-                    const micPerm = { name: 'microphone' };
-                    const camResult = await Permissions.query(camPerm);
-                    const micResult = await Permissions.query(micPerm);
-                    if (camResult.state === 'denied' || camResult.state === 'prompt') await Permissions.request(camPerm);
-                    if (micResult.state === 'denied' || micResult.state === 'prompt') await Permissions.request(micPerm);
+                const p = window.Capacitor?.Plugins?.Permissions;
+                if (p) {
+                    await p.request({ name: 'camera' });
+                    await p.request({ name: 'microphone' });
                 }
-            } catch (e) { /* ignore */ }
+            } catch (_) {}
             this.stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
                 video: { width: { ideal: 360 }, height: { ideal: 360 }, facingMode: "user" },

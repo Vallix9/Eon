@@ -85,7 +85,7 @@ function connectSocket() {
 
     socket.on("load_messages", (messages) => {
         document.getElementById("messages-list").innerHTML = "";
-        messages.forEach((m) => renderMessage(m));
+        messages.forEach((m, i) => renderMessage(m, i));
         if (isNearBottom()) scrollToBottom();
     });
 
@@ -352,7 +352,7 @@ async function loadRoomHistory(roomId) {
     try {
         const resp = await apiFetch(`/api/rooms/${roomId}/messages`);
         const data = await resp.json();
-        data.messages.forEach((m) => renderMessage(m));
+        data.messages.forEach((m, i) => renderMessage(m, i));
         if (isNearBottom()) scrollToBottom();
     } catch (e) { console.error(e); }
 }
@@ -361,18 +361,19 @@ async function loadPrivateHistory(userId) {
     try {
         const resp = await apiFetch(`/api/private-messages/${userId}`);
         const data = await resp.json();
-        data.messages.forEach((m) => renderMessage(m));
+        data.messages.forEach((m, i) => renderMessage(m, i));
         if (isNearBottom()) scrollToBottom();
     } catch (e) { console.error(e); }
 }
 
 // --- Render message ---
-function renderMessage(msg) {
+function renderMessage(msg, index) {
     if (!currentChat) return;
     const container = document.getElementById("messages-list");
     const isOutgoing = msg.sender_id === currentUser.id;
     const div = document.createElement("div");
     div.className = `message ${isOutgoing ? "outgoing" : "incoming"}`;
+    if (index !== undefined) div.style.animationDelay = `${index * 30}ms`;
     div.dataset.msgId = msg.id;
     div.dataset.senderId = msg.sender_id;
     if (msg.recipient_id) div.classList.add("private");

@@ -38,17 +38,11 @@ class VoiceRecorder {
                 alert("Запись голоса не поддерживается в вашем браузере. Пожалуйста, используйте Chrome или Firefox на ПК.");
                 return;
             }
-            // Запрашиваем разрешение на микрофон (на Android Capacitor сам запросит)
+            // Запрашиваем разрешение на микрофон (Android)
             try {
-                const Permissions = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Permissions;
-                if (Permissions) {
-                    const micPerm = { name: 'microphone' };
-                    const result = await Permissions.query(micPerm);
-                    if (result.state === 'denied' || result.state === 'prompt') {
-                        await Permissions.request(micPerm);
-                    }
-                }
-            } catch (e) { /* ignore */ }
+                const p = window.Capacitor?.Plugins?.Permissions;
+                if (p) await p.request({ name: 'microphone' });
+            } catch (_) {}
             this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
                 ? "audio/webm;codecs=opus"
