@@ -81,9 +81,9 @@ if __name__ == "__main__":
     webview.create_window(
         "Eon Messenger",
         "http://127.0.0.1:8000",
-        width=1200,
-        height=800,
-        min_size=(800, 600),
+        width=1400,
+        height=900,
+        min_size=(1000, 700),
         text_select=True,
         js_api=Api(),
     )

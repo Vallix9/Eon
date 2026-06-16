@@ -328,5 +328,25 @@
     <script src="/static/js/voice.js"></script>
     <script src="/static/js/video.js"></script>
     <script src="/static/js/chat.js"></script>
+    <script>
+        // Android back button handler (Capacitor)
+        document.addEventListener('DOMContentLoaded', function() {
+            const CapacitorApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+            if (!CapacitorApp) return;
+            CapacitorApp.addListener('backButton', function() {
+                var modal = document.querySelector('.modal:not(.hidden)');
+                if (modal) { modal.remove(); return; }
+                if (window.innerWidth <= 768 && window.currentChat) {
+                    var sidebar = document.getElementById('sidebar');
+                    var chatArea = document.getElementById('chat-area');
+                    if (sidebar && chatArea) {
+                        sidebar.classList.remove('hidden');
+                        chatArea.classList.remove('active');
+                        return;
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

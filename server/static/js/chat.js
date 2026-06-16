@@ -1226,7 +1226,11 @@ async function setup2FA() {
         _2faSecret = data.secret;
         const qrSection = document.getElementById("2fa-qr-section");
         const qrContainer = document.getElementById("2fa-qr-container");
-        qrContainer.innerHTML = `<img src="data:image/png;base64,${data.qr_base64}" alt="QR Code">`;
+        qrContainer.innerHTML = `
+            <img src="data:image/png;base64,${data.qr_base64}" alt="QR Code" style="width:160px;">
+            <p style="font-size:12px;color:var(--text-muted);margin:8px 0 4px;">Или введите ключ вручную:</p>
+            <code style="display:inline-block;background:var(--bg-input);padding:6px 10px;border-radius:4px;font-size:13px;word-break:break-all;">${data.secret}</code>
+        `;
         qrSection.classList.remove("hidden");
         document.getElementById("2fa-setup-btn").classList.add("hidden");
         document.getElementById("2fa-enable-code").value = "";

@@ -60,7 +60,6 @@ def create_tables():
 
 
 @app.route("/uploads/<path:filename>")
-@jwt_required()
 def uploaded_file(filename):
     return send_from_directory(config.UPLOAD_FOLDER, filename)
 
