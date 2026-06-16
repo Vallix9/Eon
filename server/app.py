@@ -61,7 +61,12 @@ def create_tables():
 
 @app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
-    return send_from_directory(config.UPLOAD_FOLDER, filename)
+    resp = send_from_directory(config.UPLOAD_FOLDER, filename)
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
 
 
 # --- Profile ---
