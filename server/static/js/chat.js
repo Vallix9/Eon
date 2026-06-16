@@ -336,6 +336,8 @@ function selectChat(conv) {
 }
 
 function goBackToSidebar() {
+    const ca = document.getElementById("chat-area");
+    if (ca) { ca.classList.remove("swipe-out", "swiping"); ca.style.transform = ""; }
     if (currentChat && currentChat.type !== "private") {
         socket.emit("leave_room", { room_id: currentChat.id });
     }
@@ -389,7 +391,7 @@ function renderMessage(msg, index) {
                 <div class="voice-message">
                     <button class="voice-play-btn" data-src="/${msg.file_path}" onclick="toggleVoicePlay(this)">▶</button>
                     <div class="voice-wave"><canvas width="100" height="24"></canvas></div>
-                    <span class="voice-time">0:00</span>
+                    <span class="voice-time">--:--</span>
                 </div>
             </div>`;
     } else if (msg.message_type === "video") {
@@ -444,6 +446,21 @@ function renderMessage(msg, index) {
     }
 
     container.appendChild(div);
+
+    // Voice duration preload
+    if (msg.message_type === "voice" && msg.file_path) {
+        const timeSpan = div.querySelector(".voice-time");
+        const a = new Audio();
+        a.preload = "metadata";
+        a.onloadedmetadata = () => {
+            if (!a.duration || !isFinite(a.duration)) { timeSpan.textContent = "0:00"; return; }
+            const m = Math.floor(a.duration / 60);
+            const s = Math.floor(a.duration % 60);
+            timeSpan.textContent = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+        };
+        a.onerror = () => { timeSpan.textContent = "0:00"; };
+        a.src = "/" + msg.file_path;
+    }
 }
 
 function escapeHtml(t) {
@@ -916,9 +933,28 @@ function setupEventListeners() {
     document.getElementById("back-btn").addEventListener("click", goBackToSidebar);
 
     // Swipe
-    document.getElementById("chat-area").addEventListener("touchstart", (e) => { touchStartX = e.touches[0].clientX; });
-    document.getElementById("chat-area").addEventListener("touchend", (e) => {
-        if (e.changedTouches[0].clientX - touchStartX > 80 && window.innerWidth <= 768) goBackToSidebar();
+    const chatArea = document.getElementById("chat-area");
+    let swipeStartX = 0, swipeStartFromEdge = false;
+    chatArea.addEventListener("touchstart", (e) => {
+        touchStartX = e.touches[0].clientX;
+        swipeStartFromEdge = e.touches[0].clientX < 30;
+        swipeStartX = touchStartX;
+        if (swipeStartFromEdge) chatArea.classList.add("swiping");
+    });
+    chatArea.addEventListener("touchmove", (e) => {
+        if (!swipeStartFromEdge || window.innerWidth > 768) return;
+        const dx = e.touches[0].clientX - swipeStartX;
+        if (dx > 0) chatArea.style.transform = `translateX(${Math.min(dx, 200)}px)`;
+    });
+    chatArea.addEventListener("touchend", (e) => {
+        chatArea.classList.remove("swiping");
+        chatArea.style.transform = "";
+        if (window.innerWidth > 768) return;
+        const dx = e.changedTouches[0].clientX - swipeStartX;
+        if (dx > 80 && swipeStartFromEdge) {
+            chatArea.classList.add("swipe-out");
+            setTimeout(() => { chatArea.classList.remove("swipe-out"); goBackToSidebar(); }, 250);
+        }
     });
 
     // Group modal
