@@ -309,7 +309,7 @@ html,body { height:100%; font-family:var(--font); background:var(--bg); color:va
 
 /* QR code */
 #2fa-qr-container { text-align:center; margin:12px 0; overflow:hidden; }
-#2fa-qr-container img { max-width:100%; height:auto; width:220px; border-radius:var(--radius); background:#fff; padding:4px; display:inline-block; }
+#2fa-qr-container img { max-width:100%; height:auto; width:120px; border-radius:var(--radius); background:#fff; padding:4px; display:inline-block; }
 
 /* User profile modal */
 .user-profile-content { max-width:400px; }

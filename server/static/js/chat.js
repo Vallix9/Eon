@@ -10,6 +10,7 @@ let touchStartX = 0;
 let pendingDeleteMsgId = null;
 let searchTimeout = null;
 let contactLabels = {};
+let autoScroll = true;
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (!document.getElementById("chat-area")) return;
@@ -85,13 +86,13 @@ function connectSocket() {
     socket.on("load_messages", (messages) => {
         document.getElementById("messages-list").innerHTML = "";
         messages.forEach((m) => renderMessage(m));
-        scrollToBottom();
+        if (isNearBottom()) scrollToBottom();
     });
 
     socket.on("new_message", (msg) => {
         if (currentChat && currentChat.type !== "private" && currentChat.id === msg.room_id) {
             renderMessage(msg);
-            if (isNearBottom()) scrollToBottom();
+            if (autoScroll) scrollToBottom();
         } else {
             incrementUnread(msg.room_id, msg.sender_id);
         }
@@ -104,7 +105,7 @@ function connectSocket() {
             (msg.sender_id === currentChat.id || msg.recipient_id === currentChat.id);
         if (viewing) {
             renderMessage(msg);
-            if (isNearBottom()) scrollToBottom();
+            if (autoScroll) scrollToBottom();
         } else if (msg.sender_id !== currentUser.id) {
             incrementUnread(null, msg.sender_id);
         }
@@ -280,6 +281,7 @@ function selectChat(conv) {
     }
     currentChat = { type: conv.type, id: conv.id, name: conv.name };
     clearUnread(conv.type, conv.id);
+    autoScroll = true;
 
     document.getElementById("messages-list").innerHTML = "";
     document.getElementById("typing-indicator").classList.add("hidden");
@@ -351,7 +353,7 @@ async function loadRoomHistory(roomId) {
         const resp = await apiFetch(`/api/rooms/${roomId}/messages`);
         const data = await resp.json();
         data.messages.forEach((m) => renderMessage(m));
-        scrollToBottom();
+        if (isNearBottom()) scrollToBottom();
     } catch (e) { console.error(e); }
 }
 
@@ -360,7 +362,7 @@ async function loadPrivateHistory(userId) {
         const resp = await apiFetch(`/api/private-messages/${userId}`);
         const data = await resp.json();
         data.messages.forEach((m) => renderMessage(m));
-        scrollToBottom();
+        if (isNearBottom()) scrollToBottom();
     } catch (e) { console.error(e); }
 }
 
@@ -451,6 +453,7 @@ function escapeHtml(t) {
 
 function scrollToBottom() {
     const c = document.getElementById("messages-container");
+    autoScroll = true;
     requestAnimationFrame(() => {
         c.scrollTop = c.scrollHeight;
     });
@@ -458,19 +461,22 @@ function scrollToBottom() {
 
 function isNearBottom() {
     const c = document.getElementById("messages-container");
-    return c.scrollHeight - c.scrollTop - c.clientHeight < 150;
+    return c.scrollHeight - c.scrollTop - c.clientHeight < 50;
 }
 
-function updateScrollBtn() {
+function updateAutoScroll() {
+    const c = document.getElementById("messages-container");
+    if (!c) return;
+    const nearBottom = c.scrollHeight - c.scrollTop - c.clientHeight < 50;
+    autoScroll = nearBottom;
     const btn = document.getElementById("scroll-bottom-btn");
-    if (!btn) return;
-    btn.classList.toggle("hidden", isNearBottom());
+    if (btn) btn.classList.toggle("hidden", nearBottom);
 }
 
 function setupScrollEvents() {
     const c = document.getElementById("messages-container");
     if (!c) return;
-    c.addEventListener("scroll", updateScrollBtn);
+    c.addEventListener("scroll", updateAutoScroll);
     document.getElementById("scroll-bottom-btn").addEventListener("click", () => {
         scrollToBottom();
         document.getElementById("scroll-bottom-btn").classList.add("hidden");
