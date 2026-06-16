@@ -8,6 +8,17 @@ import socket as sock
 
 import webview
 
+# PyInstaller fix: werkzeug.serving uses importlib.metadata.version('werkzeug')
+# which fails in frozen bundles because .dist-info metadata is not available.
+import importlib.metadata
+_builtin_version = importlib.metadata.version
+def _patched_version(name):
+    try:
+        return _builtin_version(name)
+    except importlib.metadata.PackageNotFoundError:
+        return "0.0.0"
+importlib.metadata.version = _patched_version
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import config
