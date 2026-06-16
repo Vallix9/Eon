@@ -1,4 +1,4 @@
-const CACHE_NAME = "eon-v1";
+const CACHE_NAME = "eon-v2";
 const URLS_TO_CACHE = [
   "/",
   "/chat",
